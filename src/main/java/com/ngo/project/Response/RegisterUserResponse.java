@@ -11,5 +11,6 @@ import java.util.List;
 @NoArgsConstructor
 public class RegisterUserResponse {
     private String status;
+    private String msg;
     private List<RegisterUserTbl> data;
 }

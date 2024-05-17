@@ -1,14 +1,10 @@
 package com.ngo.project.Controller;
 
-import com.ngo.project.Entity.Login;
-import com.ngo.project.Entity.RegisterEmployee;
-import com.ngo.project.Entity.RegisterUserTbl;
+import com.ngo.project.Entity.*;
 import com.ngo.project.Payload.LoginPayload;
 import com.ngo.project.Payload.RegisterEmployeePayload;
 import com.ngo.project.Payload.RegisterUserPayload;
-import com.ngo.project.Repository.LoginRepository;
-import com.ngo.project.Repository.RegisterEmployeeRepository;
-import com.ngo.project.Repository.RegisterUserTblRepository;
+import com.ngo.project.Repository.*;
 import com.ngo.project.Response.RegisterUserResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class RegisterController {
     @Autowired
     private LoginRepository loginRepository;
@@ -32,22 +28,29 @@ public class RegisterController {
     @Autowired
     private RegisterUserTblRepository registerUserTblRepository;
 
+    @Autowired
+    private StateRepository stateRepository;
+    @Autowired
+    private CityRepository cityRepository;
+    @Autowired
+    private DistrictRepository districtRepository;
+
     @PostMapping("/registerEmployee")
     public String registerEmployee(@RequestBody RegisterEmployeePayload registerEmployeePayload){
         RegisterEmployee dbData = registerEmployeeRepository.findByPhoneNumber(registerEmployeePayload.getPhoneNumber());
         if(null == dbData){
             Login loginObj = new Login();
-            String username = "SS13";
-            LocalDateTime dd = LocalDateTime.now();
-            int digit = dd.getDayOfMonth();
-            username += digit;
-            username = username.concat(String.valueOf(registerEmployeePayload.getFirstName().charAt(0)));
-            username = username.concat(String.valueOf(registerEmployeePayload.getGender().charAt(0)));
-            Long maxId = 0l;
-            maxId = registerEmployeeRepository.getMaxId();
-            if(maxId == null) maxId = 0l;
-            String sequence = String.format("%03d", (maxId + 1));
-            loginObj.setUsername(username + sequence);
+//            String username = "SS13";
+//            LocalDateTime dd = LocalDateTime.now();
+//            int digit = dd.getDayOfMonth();
+//            username += digit;
+//            username = username.concat(String.valueOf(registerEmployeePayload.getFirstName().charAt(0)));
+//            username = username.concat(String.valueOf(registerEmployeePayload.getGender().charAt(0)));
+//            Long maxId = 0l;
+//            maxId = registerEmployeeRepository.getMaxId();
+//            if(maxId == null) maxId = 0l;
+//            String sequence = String.format("%03d", (maxId + 1));
+//            loginObj.setUsername(username + sequence);
             loginObj.setPassword(registerEmployeePayload.getPassword());
             loginObj.setPhoneNumber(registerEmployeePayload.getPhoneNumber());
             loginObj.setRole(registerEmployeePayload.getRole());
@@ -72,9 +75,9 @@ public class RegisterController {
         }
     }
 
-    @GetMapping("/getEmployeeData/{username}")
-    public RegisterEmployee getEmployeeData(@PathVariable String username){
-        return registerEmployeeRepository.findDetailsByUsername(username);
+    @GetMapping("/getEmployeeData/{phoneNumber}")
+    public RegisterEmployee getEmployeeData(@PathVariable String phoneNumber){
+        return registerEmployeeRepository.findByPhoneNumber(phoneNumber);
     }
 
     @PostMapping("/registerUser/{flag}")
@@ -93,15 +96,46 @@ public class RegisterController {
             registerUserTbl.setPincode(registerUserPayload.getPincode());
             registerUserTbl.setPurpose(registerUserPayload.getPurpose());
 
+            String username = "SS13";
+            LocalDateTime dd = LocalDateTime.now();
+            String date = String.valueOf(dd.getDayOfMonth());
+            String month = String.valueOf(dd.getMonthValue());
+            if(month.length()==1) month = "0" + month;
+            String year = String.valueOf(dd.getYear());
+            year = year.substring(2,4);
+            username += year + month + date;
+            username = username.concat(String.valueOf(registerUserPayload.getFirstName().charAt(0)));
+            username = username.concat(String.valueOf(registerUserPayload.getGender().charAt(0)));
+            Long maxId = 0l;
+            maxId = registerUserTblRepository.getMaxId();
+            if(maxId == null) maxId = 0l;
+            String sequence = String.format("%03d", (maxId + 1));
+            registerUserTbl.setUserId(username + sequence);
+
             registerUserTblRepository.save(registerUserTbl);
             dbData = registerUserTblRepository.findByPhoneNumber(registerUserPayload.getPhoneNumber());
-            response.setStatus("Successfully added new member");
+            response.setStatus("Success");
+            response.setMsg("Successfully added new member");
             response.setData(dbData);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } else {
-            response.setStatus("Already Exists!!!");
+            response.setStatus("Failed");
+            response.setMsg("Already Exists!!!");
             response.setData(dbData);
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
+    }
+
+    @GetMapping("/getState")
+    public List<State> getState(){
+        return stateRepository.findAll();
+    }
+    @GetMapping("/getCity/{districtId}")
+    public List<City> getCity(@PathVariable int districtId){
+        return cityRepository.findByDistrictId(districtId);
+    }
+    @GetMapping("/getDistrict/{stateId}")
+    public List<District> getDistrict(@PathVariable int stateId){
+        return districtRepository.findByStateId(stateId);
     }
 }

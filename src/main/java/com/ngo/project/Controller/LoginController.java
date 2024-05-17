@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class LoginController {
     @Autowired
     private LoginRepository loginRepository;
     @PostMapping("/login")
     public String login(@RequestBody LoginPayload loginPayload){
-        Login dbData = loginRepository.findByUsername(loginPayload.getUsername());
+        Login dbData = loginRepository.findByPhoneNumber(loginPayload.getPhoneNumber());
         if(null == dbData) {
             return "User not found";
         }
@@ -26,7 +26,7 @@ public class LoginController {
             if(role != loginPayload.getRole()){
                 return "Role is invalid";
             }
-            return dbData.getUsername();
+            return dbData.getPhoneNumber();
         }
         return "Login failed";
     }
