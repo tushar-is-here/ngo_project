@@ -11,10 +11,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
@@ -108,8 +112,24 @@ public class RegisterController {
             username = username.concat(String.valueOf(registerUserPayload.getGender().charAt(0)));
             Long maxId = 0l;
             maxId = registerUserTblRepository.getMaxId();
-            if(maxId == null) maxId = 0l;
-            String sequence = String.format("%03d", (maxId + 1));
+            String sequence = "";
+            String maxCreatedOn = registerUserTblRepository.getCreatedOn();
+            // Define a custom DateTimeFormatter to handle variable fractional seconds precision
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+                    .appendPattern("yyyy-MM-dd HH:mm:ss")
+                    .optionalStart()
+                    .appendFraction(ChronoField.NANO_OF_SECOND, 0, 6, true)
+                    .optionalEnd()
+                    .toFormatter();
+
+            // Parse maxCreatedOn to a LocalDateTime and then extract the date part
+            LocalDate maxCreatedDate = LocalDateTime.parse(maxCreatedOn, formatter).toLocalDate();
+
+            LocalDate currentDate = LocalDate.now();
+            if(maxId == null || !maxCreatedDate.equals(currentDate)) {
+                maxId = 0l;
+            }
+            sequence = String.format("%03d", (maxId + 1));
             registerUserTbl.setUserId(username + sequence);
 
             registerUserTblRepository.save(registerUserTbl);
