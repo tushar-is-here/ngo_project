@@ -6,6 +6,7 @@ import com.ngo.project.Payload.RegisterEmployeePayload;
 import com.ngo.project.Payload.RegisterUserPayload;
 import com.ngo.project.Repository.*;
 import com.ngo.project.Response.RegisterUserResponse;
+import com.ngo.project.Utils.UserSequenceId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ import java.util.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*", allowCredentials = "true")
 public class RegisterController {
     @Autowired
     private LoginRepository loginRepository;
@@ -38,6 +39,8 @@ public class RegisterController {
     private CityRepository cityRepository;
     @Autowired
     private DistrictRepository districtRepository;
+    @Autowired
+    private UserSequenceRepository userSequenceRepository;
 
     @PostMapping("/registerEmployee")
     public String registerEmployee(@RequestBody RegisterEmployeePayload registerEmployeePayload){
@@ -107,31 +110,26 @@ public class RegisterController {
             if(month.length()==1) month = "0" + month;
             String year = String.valueOf(dd.getYear());
             year = year.substring(2,4);
-            username += year + month + date;
-            username = username.concat(String.valueOf(registerUserPayload.getFirstName().charAt(0)));
-            username = username.concat(String.valueOf(registerUserPayload.getGender().charAt(0)));
-            Long maxId = 0l;
-            maxId = registerUserTblRepository.getMaxId();
-            String sequence = "";
-            String maxCreatedOn = registerUserTblRepository.getCreatedOn();
-            // Define a custom DateTimeFormatter to handle variable fractional seconds precision
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-                    .appendPattern("yyyy-MM-dd HH:mm:ss")
-                    .optionalStart()
-                    .appendFraction(ChronoField.NANO_OF_SECOND, 0, 6, true)
-                    .optionalEnd()
-                    .toFormatter();
-
-            // Parse maxCreatedOn to a LocalDateTime and then extract the date part
-            LocalDate maxCreatedDate = LocalDateTime.parse(maxCreatedOn, formatter).toLocalDate();
-
-            LocalDate currentDate = LocalDate.now();
-            if(maxId == null || !maxCreatedDate.equals(currentDate)) {
-                maxId = 0l;
+            String datePart = year + month + date;
+            UserSequenceId userSequenceId = new UserSequenceId(datePart, registerUserPayload.getFirstName().charAt(0), registerUserPayload.getGender().charAt(0));
+            UserSequence userSequence = userSequenceRepository.findById(userSequenceId).orElse(new UserSequence(userSequenceId, 0));
+            // New Logic of creating unique sequence
+            int uniqueSequence = userSequence.getSequence() + 1;
+            if (uniqueSequence > 999) {
+                throw new RuntimeException("Sequence limit exceeded for the day");
             }
-            sequence = String.format("%03d", (maxId + 1));
-            registerUserTbl.setUserId(username + sequence);
+            userSequence.setSequence(uniqueSequence);
+            userSequenceRepository.save(userSequence);
 
+            String sequencePart = String.format("%03d", uniqueSequence);
+
+            System.out.println("SS13"+datePart+(registerUserPayload.getFirstName().charAt(0)) +
+                    (registerUserPayload.getGender().charAt(0))+sequencePart);
+            username += datePart+registerUserPayload.getFirstName().charAt(0) +
+                    registerUserPayload.getGender().charAt(0)+sequencePart;
+            registerUserTbl.setUserId(username);
+            userSequence.setSequence(uniqueSequence);
+            userSequenceRepository.save(userSequence);
             registerUserTblRepository.save(registerUserTbl);
             dbData = registerUserTblRepository.findByPhoneNumber(registerUserPayload.getPhoneNumber());
             response.setStatus("Success");
