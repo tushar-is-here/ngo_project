@@ -9,9 +9,8 @@ import java.util.List;
 
 public interface RegisterUserTblRepository extends JpaRepository<RegisterUserTbl, Long> {
     List<RegisterUserTbl> findByPhoneNumber(String phoneNumber);
-
-    @Query(value="select id from register_user_tbl order by id desc limit 1",nativeQuery = true)
-    Long getMaxId();
-    @Query(value="select max(created_on) FROM register_user_tbl",nativeQuery = true)
-    String getCreatedOn();
+//    @Query(value="select id from register_user_tbl order by id desc limit 1",nativeQuery = true)
+//    Long getMaxId();
+//    @Query(value="select max(created_on) FROM register_user_tbl",nativeQuery = true)
+//    String getCreatedOn();
 }
