@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LoginPayload {
-    private String phoneNumber;
+    private String username;
     private String password;
     private int role;
 }

@@ -10,13 +10,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@CrossOrigin(origins = "*", allowCredentials = "true")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class LoginController {
     @Autowired
     private LoginRepository loginRepository;
     @PostMapping("/login")
     public String login(@RequestBody LoginPayload loginPayload){
-        Login dbData = loginRepository.findByPhoneNumber(loginPayload.getPhoneNumber());
+        Login dbData = loginRepository.findByPhoneNumber(loginPayload.getUsername());
         if(null == dbData) {
             return "User not found";
         }
